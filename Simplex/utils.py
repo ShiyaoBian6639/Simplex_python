@@ -1,6 +1,10 @@
 import numpy as np
 from numba import njit
 
+@njit()
+def update_columns():
+    pass
+
 
 @njit()
 def ratio_test(inv_b, column, rhs):
