@@ -78,3 +78,59 @@ def update_basis(bv, nbv, enter_index, leaving_index):
     temp = nbv[enter_index]
     nbv[enter_index] = bv[leaving_index]
     bv[leaving_index] = temp
+
+
+@njit()
+def get_initial_basis(A):
+    n, m = A.shape
+    nbv = np.arange(n)
+    bv = np.arange(n, m)
+    inv_b = np.eye(n)
+    return bv, nbv, inv_b
+
+
+
+def primal_simplex(obj, A, rhs):
+    # beginning of primal simplex
+    simplex_iter = 0
+    bv, nbv, inv_b = get_initial_basis(A)
+    A_bv = A[:, bv]
+    A_nbv = A[:, nbv]
+
+    # get basic variable coefficients
+    c_bv = obj[bv]
+    c_nbv = obj[nbv]
+    # price out non basic variables
+    reduced_cost = np.dot(c_bv.dot(inv_b), A_nbv) - c_nbv  # future remark: consider partial pricing
+    enter_index = np.argmin(reduced_cost)  # function: get entering column (may not be the most negative one)
+    while reduced_cost[enter_index] < 1e-4:
+        entering_column = A_nbv[:, enter_index]
+        leaving_index = ratio_test(entering_column, rhs, inv_b)
+        E = prod_inv(entering_column, inv_b, leaving_index)
+        inv_b = update_inv_b(E, inv_b)
+        # update A_bv and A_nbv
+        A_bv, A_nbv = update_columns(A_bv, A_nbv, leaving_index, enter_index)
+        # update basic variable and non basic variable
+        update_basis(bv, nbv, enter_index, leaving_index)
+        update_basis(c_bv, c_nbv, enter_index, leaving_index)
+        reduced_cost = np.dot(c_bv.dot(inv_b), A_nbv) - c_nbv
+        enter_index = np.argmin(reduced_cost)
+        simplex_iter += 1
+        print(simplex_iter)
+        print(reduced_cost[enter_index])
+
+    # obtaining results
+    variable_value = np.dot(inv_b, rhs)
+    obj_val = np.dot(c_bv.dot(inv_b), rhs)  # use intermediate results in reduced cost
+    return variable_value, bv, obj_val, simplex_iter
+
+
+def random_test(n):
+    A_left = np.random.random((n, n))
+    A_eye = np.eye(n)
+    A = np.hstack((A_left, A_eye))
+    obj_left = np.random.random(n)
+    obj_right = np.zeros(n)
+    obj = np.hstack((obj_left, obj_right))
+    rhs = np.random.random(n)
+    return obj, A, rhs
