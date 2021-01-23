@@ -1,5 +1,5 @@
 import numpy as np
-from Simplex.utils import primal_simplex, random_test
+from Simplex.utils import primal_simplex, random_test, load_data
 from scipy.optimize import linprog
 
 """
@@ -24,7 +24,26 @@ A = np.delete(A, obj_row_ind, axis=0)  # pure constraint coefficients
 variable_value, basis, obj_val, simplex_iter = primal_simplex(obj, A, rhs)
 
 obj, A, rhs = random_test(100)
+n = 100
+# obj, A, rhs = load_data()
+# obj = np.hstack((obj, np.zeros(n)))
+# A_left = A[:, :n]
+# A_mid = np.zeros((n, n))
+# np.fill_diagonal(A_mid, np.random.random(n) / 2)
+# for i in range(n):
+#     A_mid[i, i] /= 2 ** i
+# A_right = A[:, 100:299]
+# temp = np.hstack((A_left, A_mid))
+# A = np.hstack((temp, A_right))
 # %timeit
+
+A = np.array([[4, 3, 0, 1, 0, 0],
+              [4, 1, 0, 0, 1, 0],
+              [4, 2, 0, 0, 0, 1]
+              ], dtype=float)
+obj = np.array([2, 1, 0, 0, 0, 0], dtype=float)
+rhs = np.array([12, 8, 9], dtype=float)
+#
 variable_value, basis, obj_val, simplex_iter = primal_simplex(obj, A, rhs)
 # %timeit
-linprog(-obj, A_ub=A, b_ub=rhs, method="revised simplex")
+# linprog(-obj, A_ub=A, b_ub=rhs, method="revised simplex")

@@ -5,10 +5,12 @@ nvb: non basic variable
 A: column matrix
 prev_column: columns that are in A (without being pre multiplied by inv_b)
 inv_b = inverse of A_bv (this should always hold)
+degeneracy happens when rhs[j] == 0
 """
 
 import numpy as np
 from numba import njit
+from simplex_param import TOLERANCE
 
 
 @njit()
@@ -28,26 +30,30 @@ def update_columns(A_bv, A_nbv, leaving_index, enter_index):
     return A_bv, A_nbv
 
 
-@njit()
 def ratio_test(prev_column, prev_rhs, inv_b):
     """
     1. rhs should be pre-multiplied with inv_b
     2. both rhs and new_column are required to be positive
-    :param prev_column:
-    :param prev_rhs:
+    :param prev_column: no ratio is computed on negative values!
+    :param prev_rhs: in primal simplex rhs is not allowed to be negative, otherwise we loose basic feasible solution
     :param inv_b:
     :return:
     """
-    new_rhs = np.dot(inv_b, prev_rhs)
+    n = len(prev_column)
+    new_rhs = np.dot(inv_b, prev_rhs) + np.random.random(n) / 100
+    print(new_rhs)
     leaving = -1
     min_value = np.inf
-    for i in range(len(prev_column)):
-        if prev_column[i] > 0 and new_rhs[i] > 0:
-            value = new_rhs[i] / prev_column[i]
+    for i in range(n):
+        if prev_column[i] > TOLERANCE:
+            value = abs(new_rhs[i] / prev_column[i])
             if min_value > value:
                 min_value = value
                 leaving = i
-    return leaving
+    if leaving == -1:
+        return np.random.randint(n)
+    else:
+        return leaving
 
 
 @njit()
@@ -83,11 +89,10 @@ def update_basis(bv, nbv, enter_index, leaving_index):
 @njit()
 def get_initial_basis(A):
     n, m = A.shape
-    nbv = np.arange(n)
-    bv = np.arange(n, m)
+    nbv = np.arange(m - n)
+    bv = np.arange(m - n, m)
     inv_b = np.eye(n)
     return bv, nbv, inv_b
-
 
 
 def primal_simplex(obj, A, rhs):
@@ -103,7 +108,7 @@ def primal_simplex(obj, A, rhs):
     # price out non basic variables
     reduced_cost = np.dot(c_bv.dot(inv_b), A_nbv) - c_nbv  # future remark: consider partial pricing
     enter_index = np.argmin(reduced_cost)  # function: get entering column (may not be the most negative one)
-    while reduced_cost[enter_index] < 1e-4:
+    while reduced_cost[enter_index] < -TOLERANCE:
         entering_column = A_nbv[:, enter_index]
         leaving_index = ratio_test(entering_column, rhs, inv_b)
         E = prod_inv(entering_column, inv_b, leaving_index)
@@ -133,4 +138,15 @@ def random_test(n):
     obj_right = np.zeros(n)
     obj = np.hstack((obj_left, obj_right))
     rhs = np.random.random(n)
+    # store generated values
+    np.savetxt("./obj.txt", obj)
+    np.savetxt("./A.txt", A)
+    np.savetxt("./rhs.txt", rhs)
+    return obj, A, rhs
+
+
+def load_data():
+    obj = np.loadtxt("./obj.txt")
+    A = np.loadtxt("./A.txt")
+    rhs = np.loadtxt("./rhs.txt")
     return obj, A, rhs
