@@ -1,1 +1,1 @@
-TOLERANCE = 1e-8
+TOLERANCE = 1e-3

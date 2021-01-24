@@ -40,23 +40,31 @@ def ratio_test(prev_column, prev_rhs, inv_b):
     :return:
     """
     n = len(prev_column)
-    new_rhs = np.dot(inv_b, prev_rhs) + np.random.random(n) / 100
-    print(new_rhs)
+    new_rhs = np.dot(inv_b, prev_rhs)
+    if np.any(new_rhs < - TOLERANCE):
+        print("negative rhs")
     leaving = -1
+    leaving_backup = -1
+    col_max = 0
     min_value = np.inf
     for i in range(n):
         if prev_column[i] > TOLERANCE:
-            value = abs(new_rhs[i] / prev_column[i])
-            if min_value > value:
-                min_value = value
-                leaving = i
+            if prev_column[i] > col_max:
+                col_max = prev_column[i]
+                leaving_backup = i
+            if new_rhs[i] > TOLERANCE:
+                value = abs(new_rhs[i] / prev_column[i])
+                if min_value > value:
+                    min_value = value
+                    leaving = i
+
+    print(f"min value: {min_value}")
     if leaving == -1:
-        return np.random.randint(n)
+        return leaving_backup
     else:
         return leaving
 
 
-@njit()
 def prod_inv(prev_column, inv_b, r):
     """
     :param prev_column: column in matrix A
@@ -69,7 +77,8 @@ def prod_inv(prev_column, inv_b, r):
     res = np.eye(n)
     temp = column[r]
     ero = - column / temp
-    ero[r] = 1 / temp
+    print(f"product of inverse divides {temp}")
+    ero[r] = 1.0 / temp
     res[:, r] = ero
     return res
 
@@ -121,8 +130,8 @@ def primal_simplex(obj, A, rhs):
         reduced_cost = np.dot(c_bv.dot(inv_b), A_nbv) - c_nbv
         enter_index = np.argmin(reduced_cost)
         simplex_iter += 1
-        print(simplex_iter)
-        print(reduced_cost[enter_index])
+        print(f"iteration: {simplex_iter}")
+        print(f"reduced cost: {reduced_cost[enter_index]} ")
 
     # obtaining results
     variable_value = np.dot(inv_b, rhs)
@@ -146,7 +155,7 @@ def random_test(n):
 
 
 def load_data():
-    obj = np.loadtxt("./obj.txt")
-    A = np.loadtxt("./A.txt")
-    rhs = np.loadtxt("./rhs.txt")
+    obj = np.loadtxt("../obj.txt")
+    A = np.loadtxt("../A.txt")
+    rhs = np.loadtxt("../rhs.txt")
     return obj, A, rhs

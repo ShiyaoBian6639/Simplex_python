@@ -23,9 +23,9 @@ obj = A[obj_row_ind]  # coefficients of the objective row
 A = np.delete(A, obj_row_ind, axis=0)  # pure constraint coefficients
 variable_value, basis, obj_val, simplex_iter = primal_simplex(obj, A, rhs)
 
-obj, A, rhs = random_test(100)
-n = 100
-# obj, A, rhs = load_data()
+# obj, A, rhs = random_test(100)
+# n = 100
+obj, A, rhs = load_data()
 # obj = np.hstack((obj, np.zeros(n)))
 # A_left = A[:, :n]
 # A_mid = np.zeros((n, n))
@@ -36,13 +36,6 @@ n = 100
 # temp = np.hstack((A_left, A_mid))
 # A = np.hstack((temp, A_right))
 # %timeit
-
-A = np.array([[4, 3, 0, 1, 0, 0],
-              [4, 1, 0, 0, 1, 0],
-              [4, 2, 0, 0, 0, 1]
-              ], dtype=float)
-obj = np.array([2, 1, 0, 0, 0, 0], dtype=float)
-rhs = np.array([12, 8, 9], dtype=float)
 #
 variable_value, basis, obj_val, simplex_iter = primal_simplex(obj, A, rhs)
 # %timeit
